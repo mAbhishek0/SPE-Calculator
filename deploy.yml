@@ -1,0 +1,22 @@
+---
+- name: Deploy Calculator App with Docker
+  hosts: localhost
+  tasks:
+    - name: Pull the latest Docker image
+      community.docker.docker_image:
+        name: "xlv02/spe-calculator:latest"
+        source: pull
+
+    - name: Stop and remove existing container (if any)
+      community.docker.docker_container:
+        name: spe-calculator
+        state: absent
+
+    - name: Run new container
+      community.docker.docker_container:
+        name: spe-calculator
+        image: "xlv02/spe-calculator:latest"
+        state: started
+        restart_policy: always
+        interactive: true
+        tty: true
