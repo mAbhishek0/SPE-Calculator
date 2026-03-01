@@ -1,68 +1,71 @@
 pipeline {
     agent any
+
     environment {
-        DOCKER_IMAGE_NAME = 'scientific-calculator'
-        GITHUB_REPO_URL = 'https://github.com/mAbhishek0/SPE-Calculator.git'
-        DOCKER_HUB_USERNAME = 'xlv02'
+        // Replace with your actual GitHub repository URL
+        GITHUB_REPO_URL = 'https://github.com/mAbhishek0/SPE-Calculator'
+
+        // Replace with your actual Docker Hub username
+        DOCKER_IMAGE = 'xlv02/spe-calculator'
+
+        // This MUST match the ID you create in Jenkins Credentials
+        DOCKER_CRED_ID = 'dockerhubcred'
     }
 
     stages {
-        stage('Clone Git') {
+        stage('Checkout') {
             steps {
-                script {
-                    git branch: 'master',
-                        credentialsId: 'github_credentials',
-                        url: "${GITHUB_REPO_URL}"
-                }
+                // Ensure the branch name matches your repository (e.g., 'main' or 'master')
+                git branch: 'main', url: "${GITHUB_REPO_URL}"
             }
         }
 
-        stage('Build the Maven Project') {
+        stage('Build & Test') {
             steps {
-                sh 'mvn clean package -DskipTests'
+                sh 'mvn clean package'
             }
         }
 
-        stage('Test the Maven project') {
+        stage('Docker Build') {
             steps {
-                sh 'mvn test'
+                sh "docker build -t ${DOCKER_IMAGE}:latest ."
             }
         }
 
-        stage('Verify JAR Existence') {
+        stage('Docker Push') {
             steps {
-                sh 'ls -lh target/'   // Check if the JAR file is actually created
-            }
-        }
-
-        stage('Build Docker Image') {
-            steps {
-                script {
-                    docker.build("${DOCKER_IMAGE_NAME}", '.')
-                }
-            }
-        }
-
-        stage('Push Docker Image to Docker Hub') {
-            steps {
-                script {
-                    docker.withRegistry('', 'docker-hub-credential') {
-                        sh "docker tag ${DOCKER_IMAGE_NAME} ${DOCKER_HUB_USERNAME}/${DOCKER_IMAGE_NAME}:latest"
-                        sh "docker push ${DOCKER_HUB_USERNAME}/${DOCKER_IMAGE_NAME}:latest"
-                    }
+                withCredentials([usernamePassword(credentialsId: env.DOCKER_CRED_ID, passwordVariable: 'DOCKER_PASS', usernameVariable: 'DOCKER_USER')]) {
+                    sh "echo \$DOCKER_PASS | docker login -u \$DOCKER_USER --password-stdin"
+                    sh "docker push ${DOCKER_IMAGE}:latest"
                 }
             }
         }
 
         stage('Deploy with Ansible') {
             steps {
-                script {
-                    ansiblePlaybook(
-                        playbook: 'deploy.yml',
-                        inventory: 'inventory'
-                    )
-                }
+                // Updated to use the newly renamed deploy.yml file
+                ansiblePlaybook(
+                    playbook: 'deploy.yml',
+                    inventory: 'inventory.ini'
+                )
             }
+        }
+    }
+
+    post {
+        success {
+            mail to: 'Abhishek.Mandal@iiitb.ac.in',
+                 subject: "SUCCESS: SPE Calculator Pipeline #${env.BUILD_NUMBER}",
+                 body: "The build and deployment were successful! You can check the Jenkins console for details."
+        }
+        failure {
+            mail to: 'Abhishek.Mandal@iiitb.ac.in',
+                 subject: "FAILURE: SPE Calculator Pipeline #${env.BUILD_NUMBER}",
+                 body: "The pipeline failed. Please check the Jenkins logs to debug the issue."
+        }
+        always {
+            // Cleans up the workspace after the build finishes
+            cleanWs()
         }
     }
 }
