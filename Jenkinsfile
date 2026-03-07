@@ -2,20 +2,16 @@ pipeline {
     agent any
 
     environment {
-        // Replace with your actual GitHub repository URL
         GITHUB_REPO_URL = 'https://github.com/mAbhishek0/SPE-Calculator'
 
-        // Replace with your actual Docker Hub username
         DOCKER_IMAGE = 'xlv02/spe-calculator'
 
-        // This MUST match the ID you create in Jenkins Credentials
         DOCKER_CRED_ID = 'dockerhubcred'
     }
 
     stages {
         stage('Checkout') {
             steps {
-                // Ensure the branch name matches your repository (e.g., 'main' or 'master')
                 git branch: 'main', url: "${GITHUB_REPO_URL}"
             }
         }
@@ -43,7 +39,6 @@ pipeline {
 
         stage('Deploy with Ansible') {
             steps {
-                // Updated to use the newly renamed deploy.yml file
                 ansiblePlaybook(
                     playbook: 'deploy.yml',
                     inventory: 'inventory.ini'
