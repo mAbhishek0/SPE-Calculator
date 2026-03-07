@@ -1,5 +1,5 @@
 package org.example;
-// test
+// test webhook
 public class Calculator {
     public double squareRoot(double x) {
         if (x < 0) throw new IllegalArgumentException("Cannot calculate square root of a negative number.");
