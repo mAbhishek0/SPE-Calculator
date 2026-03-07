@@ -47,5 +47,20 @@ pipeline {
         }
     }
 
-
+    post {
+        success {
+            mail to: 'am6156322@gmail.com',
+                 subject: "SUCCESS: SPE Calculator Pipeline #${env.BUILD_NUMBER}",
+                 body: "The build and deployment were successful! You can check the Jenkins console for details."
+        }
+        failure {
+            mail to: 'am6156322@gmail.com',
+                 subject: "FAILURE: SPE Calculator Pipeline #${env.BUILD_NUMBER}",
+                 body: "The pipeline failed. Please check the Jenkins logs to debug the issue."
+        }
+        always {
+            // Cleans up the workspace after the build finishes
+            cleanWs()
+        }
+    }
 }
