@@ -2,7 +2,6 @@ package org.example;
 import java.util.InputMismatchException;
 import java.util.Scanner;
 
-// comment test
 public class App {
     public static void main(String[] args) {
         Calculator calculator = new Calculator();
