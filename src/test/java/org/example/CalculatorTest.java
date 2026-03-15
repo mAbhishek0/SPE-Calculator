@@ -1,5 +1,7 @@
 package org.example;
+
 import org.junit.Test;
+import java.math.BigInteger;
 import static org.junit.Assert.*;
 
 public class CalculatorTest {
@@ -31,19 +33,34 @@ public class CalculatorTest {
         assertEquals(-2.0, calculator.divide(6.0, -3.0), DELTA);
     }
 
-    // Testing the Edge Case
     @Test(expected = IllegalArgumentException.class)
     public void testDivideByZero() {
         calculator.divide(10.0, 0.0);
     }
+
     @Test
-    public void testSquareRoot() { assertEquals(4.0, calculator.squareRoot(16.0), DELTA); }
+    public void testSquareRoot() {
+        assertEquals(4.0, calculator.squareRoot(16.0), DELTA);
+    }
+
     @Test
-    public void testFactorial() { assertEquals(120, calculator.factorial(5)); }
+    public void testFactorial() {
+        // BigInteger.valueOf() required — factorial() now returns BigInteger, not long
+        assertEquals(BigInteger.valueOf(120), calculator.factorial(5));
+    }
+
     @Test
-    public void testNaturalLog() { assertEquals(0.0, calculator.naturalLog(1.0), DELTA); }
+    public void testNaturalLog() {
+        assertEquals(0.0, calculator.naturalLog(1.0), DELTA);
+    }
+
     @Test
-    public void testPower() { assertEquals(8.0, calculator.power(2.0, 3.0), DELTA); }
+    public void testPower() {
+        assertEquals(8.0, calculator.power(2.0, 3.0), DELTA);
+    }
+
     @Test(expected = IllegalArgumentException.class)
-    public void testSquareRootNegative() { calculator.squareRoot(-1.0); }
+    public void testSquareRootNegative() {
+        calculator.squareRoot(-1.0);
+    }
 }
