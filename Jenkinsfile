@@ -20,7 +20,7 @@ pipeline {
 
         // Single stage — compile + test + copy deps to target/dependency/ in one shot
         // Parallel stages caused workspace conflicts and target/dependency/ was never created
-        sstage('Build & Test') {
+        stage('Build & Test') {
              steps {
                  sh 'mvn clean package'
                  sh 'ls -la target/'          // shows exactly what Maven produced
