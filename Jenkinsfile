@@ -84,31 +84,28 @@ pipeline {
         }
     }
 
-    post {
-        success {
-            emailext(
-                to: 'am6156322@gmail.com',
-                subject: "SUCCESS: SPE Calculator Pipeline #${env.BUILD_NUMBER}",
-                body: """
-                    Build #${env.BUILD_NUMBER} deployed successfully.
-                    Image: ${DOCKER_IMAGE}:${env.BUILD_NUMBER}
-                    To rollback: docker pull ${DOCKER_IMAGE}:<previous build number>
-                """,
-                async: true
-            )
-        }
-        failure {
-            emailext(
-                to: 'am6156322@gmail.com',
-                subject: "FAILURE: SPE Calculator Pipeline #${env.BUILD_NUMBER}",
-                body: "Pipeline failed at build #${env.BUILD_NUMBER}. Check logs at ${env.BUILD_URL}",
-                async: true
-            )
-        }
-        always {
-            // Remove dangling build artifacts even if pipeline fails
-            sh 'docker logout'
-            cleanWs()
-        }
+post {
+    success {
+        emailext(
+            to: 'am6156322@gmail.com',
+            subject: "SUCCESS: SPE Calculator Pipeline #${env.BUILD_NUMBER}",
+            body: """
+                Build #${env.BUILD_NUMBER} deployed successfully.
+                Image: ${DOCKER_IMAGE}:${env.BUILD_NUMBER}
+                To rollback: docker pull ${DOCKER_IMAGE}:<previous build number>
+            """
+        )
     }
+    failure {
+        emailext(
+            to: 'am6156322@gmail.com',
+            subject: "FAILURE: SPE Calculator Pipeline #${env.BUILD_NUMBER}",
+            body: "Pipeline failed at build #${env.BUILD_NUMBER}. Check logs at ${env.BUILD_URL}"
+        )
+    }
+    always {
+        sh 'docker logout'
+        cleanWs()
+    }
+}
 }
