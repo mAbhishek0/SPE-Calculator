@@ -20,12 +20,14 @@ pipeline {
 
         // Single stage — compile + test + copy deps to target/dependency/ in one shot
         // Parallel stages caused workspace conflicts and target/dependency/ was never created
-        stage('Build & Test') {
-            steps {
-                sh 'mvn clean package'
-                junit 'target/surefire-reports/*.xml'
-            }
-        }
+        sstage('Build & Test') {
+             steps {
+                 sh 'mvn clean package'
+                 sh 'ls -la target/'          // shows exactly what Maven produced
+                 sh 'ls -la target/dependency/ || echo "dependency folder MISSING"'
+                 junit 'target/surefire-reports/*.xml'
+             }
+         }
 
         stage('Docker Build') {
             steps {
