@@ -7,8 +7,6 @@ pipeline {
         DOCKER_CRED_ID  = 'dockerhubcred'
     }
 
-    // Only trigger pipeline on a push/PR to main
-    // Prevents wasted builds on every commit to every branch
     triggers {
         githubPush()
     }
@@ -20,25 +18,12 @@ pipeline {
             }
         }
 
-        stage('Compile') {
+        // Single stage — compile + test + copy deps to target/dependency/ in one shot
+        // Parallel stages caused workspace conflicts and target/dependency/ was never created
+        stage('Build & Test') {
             steps {
-                sh 'mvn clean compile'
-            }
-        }
-
-        stage('Verify') {
-            parallel {
-                stage('Unit Tests') {
-                    steps {
-                        sh 'mvn test'
-                        junit 'target/surefire-reports/*.xml'
-                    }
-                }
-                stage('Package') {
-                    steps {
-                        sh 'mvn package -DskipTests'
-                    }
-                }
+                sh 'mvn clean package'
+                junit 'target/surefire-reports/*.xml'
             }
         }
 
@@ -69,43 +54,31 @@ pipeline {
             }
         }
 
-        // Runs after deploy — removes dangling images to keep host disk clean
-        // Keeps last 3 tagged images for rollback, prunes everything else
         stage('Cleanup') {
             steps {
                 sh 'docker image prune -f'
-                sh """
-                    docker images ${DOCKER_IMAGE} --format '{{.Tag}}' | \
-                    sort -rn | \
-                    tail -n +4 | \
-                    xargs -r -I {} docker rmi ${DOCKER_IMAGE}:{}
-                """
             }
         }
     }
 
-post {
-    success {
-        emailext(
-            to: 'am6156322@gmail.com',
-            subject: "SUCCESS: SPE Calculator Pipeline #${env.BUILD_NUMBER}",
-            body: """
-                Build #${env.BUILD_NUMBER} deployed successfully.
-                Image: ${DOCKER_IMAGE}:${env.BUILD_NUMBER}
-                To rollback: docker pull ${DOCKER_IMAGE}:<previous build number>
-            """
-        )
+    post {
+        success {
+            emailext(
+                to: 'am6156322@gmail.com',
+                subject: "SUCCESS: SPE Calculator Pipeline #${env.BUILD_NUMBER}",
+                body: "Build #${env.BUILD_NUMBER} deployed. Image: ${DOCKER_IMAGE}:${env.BUILD_NUMBER}"
+            )
+        }
+        failure {
+            emailext(
+                to: 'am6156322@gmail.com',
+                subject: "FAILURE: SPE Calculator Pipeline #${env.BUILD_NUMBER}",
+                body: "Pipeline failed. Logs: ${env.BUILD_URL}"
+            )
+        }
+        always {
+            sh 'docker logout'
+            cleanWs()
+        }
     }
-    failure {
-        emailext(
-            to: 'am6156322@gmail.com',
-            subject: "FAILURE: SPE Calculator Pipeline #${env.BUILD_NUMBER}",
-            body: "Pipeline failed at build #${env.BUILD_NUMBER}. Check logs at ${env.BUILD_URL}"
-        )
-    }
-    always {
-        sh 'docker logout'
-        cleanWs()
-    }
-}
 }
