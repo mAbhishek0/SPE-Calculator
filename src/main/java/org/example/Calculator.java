@@ -24,6 +24,7 @@ public class Calculator {
     }
     public long factorial(int x) {
         if (x < 0) throw new IllegalArgumentException("Factorial of negative number is undefined.");
+        if (x > 20) throw new IllegalArgumentException("Input must be 20 or below; larger values cause long overflow.");
         long fact = 1;
         for (int i = 1; i <= x; i++) fact *= i;
         return fact;
