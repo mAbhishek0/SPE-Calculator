@@ -14,18 +14,34 @@ pipeline {
             }
         }
 
-        stage('Build & Test') {
+        // Compile first — both parallel branches below need the .class files
+        stage('Compile') {
             steps {
-                // Runs compile + test + copies deps to target/dependency/
-                sh 'mvn clean package'
-                // Publish test results in Jenkins UI
-                junit 'target/surefire-reports/*.xml'
+                sh 'mvn clean compile'
+            }
+        }
+
+        // Compile and test run simultaneously — whichever finishes last
+        // determines how long this stage takes (not the sum of both)
+        stage('Verify') {
+            parallel {
+                stage('Unit Tests') {
+                    steps {
+                        sh 'mvn test'
+                        junit 'target/surefire-reports/*.xml'
+                    }
+                }
+                stage('Package') {
+                    steps {
+                        // -DskipTests because Unit Tests branch runs them
+                        sh 'mvn package -DskipTests'
+                    }
+                }
             }
         }
 
         stage('Docker Build') {
             steps {
-                // Tag with both :latest and build number for rollback
                 sh "docker build -t ${DOCKER_IMAGE}:latest -t ${DOCKER_IMAGE}:${env.BUILD_NUMBER} ."
             }
         }
@@ -54,7 +70,6 @@ pipeline {
 
     post {
         success {
-            // emailext is non-blocking unlike the basic mail step
             emailext(
                 to: 'am6156322@gmail.com',
                 subject: "SUCCESS: SPE Calculator Pipeline #${env.BUILD_NUMBER}",
