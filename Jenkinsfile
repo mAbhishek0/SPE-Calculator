@@ -16,7 +16,7 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                git branch: 'main', url: "${GITHUB_REPO_URL}"
+                git branch: 'optimise-pipeline', url: "${GITHUB_REPO_URL}"
             }
         }
 
