@@ -1,6 +1,7 @@
 ---
 - name: Deploy Calculator App with Docker
   hosts: localhost
+
   tasks:
     - name: Pull the latest Docker image
       community.docker.docker_image:
@@ -11,3 +12,28 @@
       community.docker.docker_container:
         name: spe-calculator
         state: absent
+
+    - name: Start new container
+      community.docker.docker_container:
+        name: spe-calculator
+        image: "xlv02/spe-calculator:latest"
+        state: started
+        restart_policy: unless-stopped
+        interactive: true
+        tty: true
+
+    - name: Remove unused Docker images to free disk space
+      community.docker.docker_prune:
+        images: true
+        images_filters:
+          dangling: true
+
+    - name: Verify container is running
+      community.docker.docker_container_info:
+        name: spe-calculator
+      register: container_info
+
+    - name: Fail if container did not start
+      fail:
+        msg: "Container spe-calculator failed to start after deploy."
+      when: not container_info.exists or container_info.container.State.Status != "running"
